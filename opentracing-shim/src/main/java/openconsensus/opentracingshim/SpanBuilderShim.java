@@ -52,6 +52,18 @@ final class SpanBuilderShim implements SpanBuilder {
     this.spanName = spanName;
   }
 
+  openconsensus.trace.SpanId getParentSpanId() {
+    openconsensus.trace.SpanId parentSpanId = null;
+
+    if (parentSpan != null) {
+      parentSpanId = parentSpan.getContext().getSpanId();
+    } else if (parentSpanContext != null) {
+      parentSpanId = parentSpanContext.getSpanId();
+    }
+
+    return parentSpanId;
+  }
+
   @Override
   public SpanBuilder asChildOf(SpanContext parent) {
     // TODO - Verify we handle a no-op SpanContext
