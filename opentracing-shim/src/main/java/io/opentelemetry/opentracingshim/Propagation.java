@@ -11,20 +11,28 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentracing.propagation.TextMapExtract;
 import io.opentracing.propagation.TextMapInject;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 
 final class Propagation extends BaseShimObject {
-  Propagation(TelemetryInfo telemetryInfo) {
+  TextMapGetter textMapGetter;
+  TextMapSetter textMapSetter;
+
+  Propagation(TelemetryInfo telemetryInfo, boolean urlEncoding) {
     super(telemetryInfo);
+    this.textMapGetter = new TextMapGetter(urlEncoding);
+    this.textMapSetter = new TextMapSetter(urlEncoding);
   }
 
   public void injectTextMap(SpanContextShim contextShim, TextMapInject carrier) {
     Context context = Context.current().with(Span.wrap(contextShim.getSpanContext()));
     context = context.with(contextShim.getBaggage());
 
-    propagators().getTextMapPropagator().inject(context, carrier, TextMapSetter.INSTANCE);
+    propagators().getTextMapPropagator().inject(context, carrier, textMapSetter);
   }
 
   @Nullable
@@ -35,9 +43,7 @@ final class Propagation extends BaseShimObject {
     }
 
     Context context =
-        propagators()
-            .getTextMapPropagator()
-            .extract(Context.current(), carrierMap, TextMapGetter.INSTANCE);
+        propagators().getTextMapPropagator().extract(Context.current(), carrierMap, textMapGetter);
 
     Span span = Span.fromContext(context);
     if (!span.getSpanContext().isValid()) {
@@ -48,22 +54,38 @@ final class Propagation extends BaseShimObject {
   }
 
   static final class TextMapSetter implements TextMapPropagator.Setter<TextMapInject> {
-    private TextMapSetter() {}
+    final boolean urlEncoding;
 
-    public static final TextMapSetter INSTANCE = new TextMapSetter();
+    TextMapSetter(boolean urlEncoding) {
+      this.urlEncoding = urlEncoding;
+    }
 
     @Override
     public void set(TextMapInject carrier, String key, String value) {
-      carrier.put(key, value);
+      carrier.put(key, encodedValue(value));
+    }
+
+    private String encodedValue(String value) {
+      if (!urlEncoding) {
+        return value;
+      }
+      try {
+        return URLEncoder.encode(value, "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        // not much we can do, try raw value
+        return value;
+      }
     }
   }
 
   // We use Map<> instead of TextMap as we need to query a specified key, and iterating over
   // *all* values per key-query *might* be a bad idea.
   static final class TextMapGetter implements TextMapPropagator.Getter<Map<String, String>> {
-    private TextMapGetter() {}
+    final boolean urlEncoding;
 
-    public static final TextMapGetter INSTANCE = new TextMapGetter();
+    TextMapGetter(boolean urlEncoding) {
+      this.urlEncoding = urlEncoding;
+    }
 
     @Nullable
     @Override
@@ -75,10 +97,22 @@ final class Propagation extends BaseShimObject {
     public String get(Map<String, String> carrier, String key) {
       for (Map.Entry<String, String> entry : carrier.entrySet()) {
         if (key.equalsIgnoreCase(entry.getKey())) {
-          return entry.getValue();
+          return decodedValue(entry.getValue());
         }
       }
       return null;
+    }
+
+    private String decodedValue(String value) {
+      if (!urlEncoding) {
+        return value;
+      }
+      try {
+        return URLDecoder.decode(value, "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        // not much we can do, try raw value
+        return value;
+      }
     }
   }
 }

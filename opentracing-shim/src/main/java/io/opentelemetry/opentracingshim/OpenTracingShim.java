@@ -37,9 +37,21 @@ public final class OpenTracingShim {
    * @return a {@code io.opentracing.Tracer}.
    */
   public static io.opentracing.Tracer createTracerShim(OpenTelemetry openTelemetry) {
+    return createTracerShim(openTelemetry, /* urlEncoding = */ false);
+  }
+
+  /**
+   * Creates a {@code io.opentracing.Tracer} shim using the provided OpenTelemetry instance.
+   *
+   * @param openTelemetry the {@code OpenTelemetry} instance used to create this shim.
+   * @return a {@code io.opentracing.Tracer}.
+   */
+  public static io.opentracing.Tracer createTracerShim(
+      OpenTelemetry openTelemetry, boolean urlEncoding) {
     return new TracerShim(
         new TelemetryInfo(
-            getTracer(openTelemetry.getTracerProvider()), openTelemetry.getPropagators()));
+            getTracer(openTelemetry.getTracerProvider()), openTelemetry.getPropagators()),
+        urlEncoding);
   }
 
   private static Tracer getTracer(TracerProvider tracerProvider) {

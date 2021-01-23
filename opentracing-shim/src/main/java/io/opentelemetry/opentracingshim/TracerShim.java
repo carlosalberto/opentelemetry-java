@@ -24,9 +24,13 @@ final class TracerShim extends BaseShimObject implements Tracer {
   private volatile boolean isClosed;
 
   TracerShim(TelemetryInfo telemetryInfo) {
+    this(telemetryInfo, /* urlEncoding = */ false);
+  }
+
+  TracerShim(TelemetryInfo telemetryInfo, boolean urlEncoding) {
     super(telemetryInfo);
     this.scopeManagerShim = new ScopeManagerShim(telemetryInfo);
-    this.propagation = new Propagation(telemetryInfo);
+    this.propagation = new Propagation(telemetryInfo, urlEncoding);
   }
 
   @Override
