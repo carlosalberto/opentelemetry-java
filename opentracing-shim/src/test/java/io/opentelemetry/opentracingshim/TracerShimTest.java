@@ -9,6 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -224,6 +226,23 @@ class TracerShimTest {
 
     assertThat(tracerShim.activeSpan()).isNull();
     assertThat(tracerShim.scopeManager().activeSpan()).isNull();
+  }
+
+  @Test
+  void activateSpan_unsampled() {
+    SdkTracerProvider tracerSdkFactory =
+        SdkTracerProvider.builder().setSampler(Sampler.alwaysOff()).build();
+    TracerShim tracerShim =
+        new TracerShim(
+            new TelemetryInfo(
+                tracerSdkFactory.get("opentracingshim"), OpenTracingPropagators.builder().build()));
+
+    Span otSpan = tracerShim.buildSpan("one").start();
+    assertThat(((SpanShim) otSpan).getSpan().getSpanContext().isSampled()).isFalse();
+
+    try (Scope scope = tracerShim.scopeManager().activate(otSpan)) {
+      assertThat(tracerShim.scopeManager().activeSpan()).isEqualTo(otSpan);
+    }
   }
 
   @Test
