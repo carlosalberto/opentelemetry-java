@@ -41,7 +41,8 @@ final class Propagation extends BaseShimObject {
     Context context = getPropagator(format).extract(Context.current(), carrierMap, GETTER_INSTANCE);
 
     Span span = Span.fromContext(context);
-    if (!span.getSpanContext().isValid()) {
+    Baggage baggage = Baggage.fromContext(context);
+    if (!span.getSpanContext().isValid() && baggage.isEmpty()) {
       return null;
     }
 

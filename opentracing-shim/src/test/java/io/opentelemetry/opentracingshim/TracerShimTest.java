@@ -7,7 +7,9 @@ package io.opentelemetry.opentracingshim;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -318,6 +320,42 @@ class TracerShimTest {
     tracerShim.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(map));
     assertThat(textMapPropagator.isExtracted()).isFalse();
     assertThat(httpHeadersPropagator.isExtracted()).isTrue();
+  }
+
+  @Test
+  void extract_onlyBaggage() {
+    W3CBaggagePropagator propagator = W3CBaggagePropagator.getInstance();
+    tracerShim =
+        new TracerShim(
+            new TelemetryInfo(
+                tracer, OpenTracingPropagators.builder().setTextMap(propagator).build()));
+
+    io.opentelemetry.api.baggage.Baggage baggage =
+        io.opentelemetry.api.baggage.Baggage.builder().put("foo", "bar").build();
+    Map<String, String> map = new HashMap<>();
+    propagator.inject(Context.root().with(baggage), map, Map::put);
+
+    SpanContext spanContext = tracerShim.extract(Format.Builtin.TEXT_MAP, new TextMapAdapter(map));
+    SpanContextShim spanContextShim = (SpanContextShim) spanContext;
+    assertThat(spanContextShim.getSpanContext().isValid()).isFalse();
+    assertThat(spanContextShim.getBaggage()).isEqualTo(baggage);
+
+    Span childSpan = tracerShim.buildSpan("child").asChildOf(spanContext).start();
+    assertThat(((SpanShim) childSpan).getBaggage()).isEqualTo(baggage);
+  }
+
+  @Test
+  void buildSpan_activeBaggageOnly() {
+    io.opentelemetry.api.baggage.Baggage baggage =
+        io.opentelemetry.api.baggage.Baggage.builder().put("foo", "bar").build();
+    Context context = Context.current().with(baggage);
+
+    try (io.opentelemetry.context.Scope scope = context.makeCurrent()) {
+      assertThat(tracerShim.activeSpan()).isNotNull();
+
+      Span childSpan = tracerShim.buildSpan("one").start();
+      assertThat(((SpanShim) childSpan).getBaggage()).isEqualTo(baggage);
+    }
   }
 
   @Test

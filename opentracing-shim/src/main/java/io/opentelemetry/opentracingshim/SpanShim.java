@@ -52,6 +52,10 @@ final class SpanShim extends BaseShimObject implements Span, ImplicitContextKeye
     this(telemetryInfo, span, Baggage.empty());
   }
 
+  public SpanShim(TelemetryInfo telemetryInfo, io.opentelemetry.api.baggage.Baggage baggage) {
+    this(telemetryInfo, io.opentelemetry.api.trace.Span.getInvalid(), baggage);
+  }
+
   public SpanShim(
       TelemetryInfo telemetryInfo, io.opentelemetry.api.trace.Span span, Baggage baggage) {
     super(telemetryInfo);
@@ -62,6 +66,12 @@ final class SpanShim extends BaseShimObject implements Span, ImplicitContextKeye
 
   io.opentelemetry.api.trace.Span getSpan() {
     return span;
+  }
+
+  io.opentelemetry.api.baggage.Baggage getBaggage() {
+    synchronized (spanContextShimLock) {
+      return spanContextShim.getBaggage();
+    }
   }
 
   @Nullable
