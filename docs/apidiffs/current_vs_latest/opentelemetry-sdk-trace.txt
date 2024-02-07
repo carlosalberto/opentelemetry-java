@@ -1,2 +1,36 @@
 Comparing source compatibility of  against 
-No changes.
+***! MODIFIED CLASS: PUBLIC FINAL io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 52.0 <- 52.0
+	---! REMOVED METHOD: PUBLIC(-) io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder setExportUnsampledSpans(boolean)
++++  NEW CLASS: PUBLIC(+) FINAL(+) io.opentelemetry.sdk.trace.export.PeerServiceSpanProcessor  (not serializable)
+	+++  CLASS FILE FORMAT VERSION: 52.0 <- n.a.
+	+++  NEW INTERFACE: java.io.Closeable
+	+++  NEW INTERFACE: java.lang.AutoCloseable
+	+++  NEW INTERFACE: io.opentelemetry.sdk.trace.SpanProcessor
+	+++  NEW SUPERCLASS: java.lang.Object
+	+++  NEW CONSTRUCTOR: PUBLIC(+) PeerServiceSpanProcessor()
+	+++  NEW METHOD: PUBLIC(+) boolean isEndRequired()
+	+++  NEW METHOD: PUBLIC(+) boolean isStartRequired()
+	+++  NEW METHOD: PUBLIC(+) void onEnd(io.opentelemetry.sdk.trace.ReadableSpan)
+	+++  NEW METHOD: PUBLIC(+) void onStart(io.opentelemetry.context.Context, io.opentelemetry.sdk.trace.ReadWriteSpan)
+***! MODIFIED CLASS: PUBLIC FINAL io.opentelemetry.sdk.trace.export.SimpleSpanProcessor  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 52.0 <- 52.0
+	---! REMOVED METHOD: PUBLIC(-) STATIC(-) io.opentelemetry.sdk.trace.export.SimpleSpanProcessorBuilder builder(io.opentelemetry.sdk.trace.export.SpanExporter)
+---! REMOVED CLASS: PUBLIC(-) FINAL(-) io.opentelemetry.sdk.trace.export.SimpleSpanProcessorBuilder  (not serializable)
+	---  CLASS FILE FORMAT VERSION: n.a. <- 52.0
+	---! REMOVED SUPERCLASS: java.lang.Object
+	---! REMOVED METHOD: PUBLIC(-) io.opentelemetry.sdk.trace.export.SimpleSpanProcessor build()
+	---! REMOVED METHOD: PUBLIC(-) io.opentelemetry.sdk.trace.export.SimpleSpanProcessorBuilder setExportUnsampledSpans(boolean)
++++* NEW CLASS: PUBLIC(+) FINAL(+) io.opentelemetry.sdk.trace.PeerServicePropagator  (not serializable)
+	+++  CLASS FILE FORMAT VERSION: 52.0 <- n.a.
+	+++  NEW SUPERCLASS: java.lang.Object
+	+++  NEW CONSTRUCTOR: PUBLIC(+) PeerServicePropagator(io.opentelemetry.sdk.resources.Resource)
+	+++  NEW METHOD: PUBLIC(+) java.lang.String encodeTraceState(io.opentelemetry.api.trace.TraceState)
+	+++* NEW METHOD: PUBLIC(+) io.opentelemetry.context.Context extract(io.opentelemetry.context.Context, java.lang.Object, io.opentelemetry.context.propagation.TextMapGetter<C>)
+		GENERIC TEMPLATES: +++ C:java.lang.Object
+	+++  NEW METHOD: PUBLIC(+) java.util.Collection<java.lang.String> fields()
+	+++* NEW METHOD: PUBLIC(+) void inject(io.opentelemetry.context.Context, java.lang.Object, io.opentelemetry.context.propagation.TextMapSetter<C>)
+		GENERIC TEMPLATES: +++ C:java.lang.Object
+***  MODIFIED CLASS: PUBLIC FINAL io.opentelemetry.sdk.trace.SdkTracerProvider  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 52.0 <- 52.0
+	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.resources.Resource getResource()
