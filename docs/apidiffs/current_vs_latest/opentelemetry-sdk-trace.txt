@@ -1,11 +1,16 @@
-Comparing source compatibility of opentelemetry-sdk-trace-1.58.0-SNAPSHOT.jar against opentelemetry-sdk-trace-1.57.0.jar
-***  MODIFIED CLASS: PUBLIC FINAL io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder  (not serializable)
-	===  CLASS FILE FORMAT VERSION: 52.0 <- 52.0
-	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder setInternalTelemetryVersion(io.opentelemetry.sdk.common.InternalTelemetryVersion)
-	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder setMeterProvider(java.util.function.Supplier<io.opentelemetry.api.metrics.MeterProvider>)
-***  MODIFIED CLASS: PUBLIC FINAL io.opentelemetry.sdk.trace.export.SimpleSpanProcessorBuilder  (not serializable)
-	===  CLASS FILE FORMAT VERSION: 52.0 <- 52.0
-	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.trace.export.SimpleSpanProcessorBuilder setMeterProvider(java.util.function.Supplier<io.opentelemetry.api.metrics.MeterProvider>)
-***  MODIFIED CLASS: PUBLIC FINAL io.opentelemetry.sdk.trace.SdkTracerProviderBuilder  (not serializable)
-	===  CLASS FILE FORMAT VERSION: 52.0 <- 52.0
-	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.trace.SdkTracerProviderBuilder setMeterProvider(java.util.function.Supplier<io.opentelemetry.api.metrics.MeterProvider>)
+Comparing source compatibility of opentelemetry-sdk-trace-1.58.0-SNAPSHOT.jar against opentelemetry-sdk-trace-1.59.0.jar
++++  NEW CLASS: PUBLIC(+) FINAL(+) io.opentelemetry.sdk.trace.export.SpanWatcherProcessor  (not serializable)
+	+++  CLASS FILE FORMAT VERSION: 52.0 <- n.a.
+	+++  NEW INTERFACE: java.io.Closeable
+	+++  NEW INTERFACE: java.lang.AutoCloseable
+	+++  NEW INTERFACE: io.opentelemetry.sdk.trace.SpanProcessor
+	+++  NEW SUPERCLASS: java.lang.Object
+	+++  NEW METHOD: PUBLIC(+) void close()
+	+++  NEW METHOD: PUBLIC(+) STATIC(+) io.opentelemetry.sdk.trace.export.SpanWatcherProcessor create(io.opentelemetry.sdk.trace.SpanProcessor, io.opentelemetry.api.logs.Logger, long)
+	+++  NEW METHOD: PUBLIC(+) STATIC(+) io.opentelemetry.sdk.trace.export.SpanWatcherProcessor create(io.opentelemetry.sdk.trace.SpanProcessor, io.opentelemetry.api.logs.Logger)
+	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.common.CompletableResultCode forceFlush()
+	+++  NEW METHOD: PUBLIC(+) boolean isEndRequired()
+	+++  NEW METHOD: PUBLIC(+) boolean isStartRequired()
+	+++  NEW METHOD: PUBLIC(+) void onEnd(io.opentelemetry.sdk.trace.ReadableSpan)
+	+++  NEW METHOD: PUBLIC(+) void onStart(io.opentelemetry.context.Context, io.opentelemetry.sdk.trace.ReadWriteSpan)
+	+++  NEW METHOD: PUBLIC(+) io.opentelemetry.sdk.common.CompletableResultCode shutdown()
