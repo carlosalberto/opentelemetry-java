@@ -5,6 +5,7 @@
 
 package io.opentelemetry.api;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.logs.LoggerProvider;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.MeterBuilder;
@@ -12,6 +13,7 @@ import io.opentelemetry.api.metrics.MeterProvider;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.TracerBuilder;
 import io.opentelemetry.api.trace.TracerProvider;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.ContextPropagators;
 
 /**
@@ -129,4 +131,16 @@ public interface OpenTelemetry {
 
   /** Returns the {@link ContextPropagators} for this {@link OpenTelemetry}. */
   ContextPropagators getPropagators();
+
+  /**
+   * Sets attributes to the {@link Context}. If the {@link Context} previously contained a mapping
+   * for any of the keys, the old values are replaced by the specified values.
+   *
+   * @param attributes the attributes
+   * @return this.
+   * @since 1.58.0
+   */
+  default Context setContextScopedAttributes(Context context, Attributes attributes) {
+    return context;
+  }
 }

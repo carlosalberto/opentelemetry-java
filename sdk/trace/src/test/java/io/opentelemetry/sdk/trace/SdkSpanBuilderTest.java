@@ -33,6 +33,7 @@ import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.common.internal.ContextScopeUtils;
 import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
@@ -1089,5 +1090,85 @@ class SdkSpanBuilderTest {
               assertThat(spanBuilder.startSpan().getSpanContext().isValid()).isTrue();
             })
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void contextScopedAttributes() {
+    // Verify context-scoped attributes were propagated
+    // but actual Span attributes have higher priority.
+    Context context =
+        ContextScopeUtils.setContextScopedAttributes(
+            Context.root(),
+            Attributes.builder()
+                .put(stringKey("string"), "str")
+                .put(booleanKey("boolean"), true)
+                .build());
+    SpanBuilder spanBuilder = sdkTracer.spanBuilder(SPAN_NAME);
+    spanBuilder.setParent(context);
+    spanBuilder.setAttribute(stringKey("string"), "foobar");
+    spanBuilder.setAttribute(longKey("long"), 12345678910L);
+
+    SdkSpan span = (SdkSpan) spanBuilder.startSpan();
+    try {
+      Attributes attributes = span.toSpanData().getAttributes();
+      assertThat(attributes.size()).isEqualTo(3);
+      assertThat(attributes.get(stringKey("string"))).isEqualTo("foobar");
+      assertThat(attributes.get(booleanKey("boolean"))).isEqualTo(true);
+      assertThat(attributes.get(longKey("long"))).isEqualTo(12345678910L);
+    } finally {
+      span.end();
+    }
+  }
+
+  @Test
+  public void contextScopedAttributes_passedToSampler() {
+    MockedSampler mockedSampler = new MockedSampler();
+    TracerProvider tracerProvider = SdkTracerProvider.builder().setSampler(mockedSampler).build();
+
+    // Verify context-scoped attributes were propagated
+    // to the Sampler along actual Span attributes.
+    Context context =
+        ContextScopeUtils.setContextScopedAttributes(
+            Context.root(),
+            Attributes.builder()
+                .put(stringKey("string0"), "str0")
+                .put(stringKey("string1"), "str1")
+                .build());
+    SpanBuilder spanBuilder = tracerProvider.get("test").spanBuilder(SPAN_NAME);
+    spanBuilder.setParent(context);
+    spanBuilder.setAttribute(stringKey("string0"), "foobar");
+
+    Span span = spanBuilder.startSpan();
+    try {
+      assertThat(mockedSampler.sampleAttributes.size()).isEqualTo(2);
+      assertThat(mockedSampler.sampleAttributes.get(stringKey("string0"))).isEqualTo("foobar");
+      assertThat(mockedSampler.sampleAttributes.get(stringKey("string1"))).isEqualTo("str1");
+    } finally {
+      span.end();
+    }
+  }
+
+  // We can't simply Mock as Mockito's verify() + eq() doesn't seem
+  // to work well with Attributes instances (even though Attributes DOES
+  // implement equals() + hascode()).
+  private static class MockedSampler implements Sampler {
+    @Nullable Attributes sampleAttributes;
+
+    @Override
+    public SamplingResult shouldSample(
+        Context parentContext,
+        String traceId,
+        String name,
+        SpanKind spanKind,
+        Attributes attributes,
+        List<LinkData> parentLinks) {
+      this.sampleAttributes = attributes;
+      return SamplingResult.create(SamplingDecision.RECORD_AND_SAMPLE);
+    }
+
+    @Override
+    public String getDescription() {
+      return "MockedSampler";
+    }
   }
 }

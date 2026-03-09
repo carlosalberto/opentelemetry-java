@@ -25,6 +25,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
 import io.opentelemetry.sdk.common.internal.AttributeUtil;
 import io.opentelemetry.sdk.common.internal.AttributesMap;
+import io.opentelemetry.sdk.common.internal.ContextScopeUtils;
 import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.samplers.SamplingDecision;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
@@ -213,6 +214,13 @@ class SdkSpanBuilder implements SpanBuilder {
     // Avoid any possibility to modify the links list by adding links to the Builder after the
     // startSpan is called. If that happens all the links will be added in a new list.
     links = null;
+    Attributes contextAttributes = ContextScopeUtils.getContextScopedAttributes(parentContext);
+    contextAttributes.forEach(
+        (key, value) -> {
+          if (!attributes().containsKey(key)) {
+            attributes().put(key, value);
+          }
+        });
     Attributes immutableAttributes = attributes == null ? Attributes.empty() : attributes;
     SamplingResult samplingResult =
         tracerSharedState

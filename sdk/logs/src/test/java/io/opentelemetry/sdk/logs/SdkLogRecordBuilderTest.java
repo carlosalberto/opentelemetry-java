@@ -28,6 +28,7 @@ import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.common.Clock;
 import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
+import io.opentelemetry.sdk.common.internal.ContextScopeUtils;
 import io.opentelemetry.sdk.common.internal.ExceptionAttributeResolver;
 import io.opentelemetry.sdk.logs.internal.LoggerConfig;
 import io.opentelemetry.sdk.resources.Resource;
@@ -194,6 +195,31 @@ class SdkLogRecordBuilderTest {
               assertThat(attributes.get(stringKey("exception.message")))
                   .isEqualTo("custom message");
               assertThat(attributes.get(stringKey("exception.stacktrace"))).isNotNull();
+            });
+  }
+
+  @Test
+  void contextScopedAttributes() {
+    Context context =
+        ContextScopeUtils.setContextScopedAttributes(
+            Context.root(),
+            Attributes.builder()
+                .put(stringKey("string"), "str")
+                .put(booleanKey("boolean"), true)
+                .build());
+
+    builder
+        .setAttribute(stringKey("string"), "foobar")
+        .setAttribute(longKey("long"), 12345678910L)
+        .setContext(context)
+        .emit();
+
+    assertThat(emittedLog.get().toLogRecordData())
+        .hasAttributesSatisfying(
+            attributes -> {
+              assertThat(attributes.get(stringKey("string"))).isEqualTo("foobar");
+              assertThat(attributes.get(booleanKey("boolean"))).isEqualTo(true);
+              assertThat(attributes.get(longKey("long"))).isEqualTo(12345678910L);
             });
   }
 }

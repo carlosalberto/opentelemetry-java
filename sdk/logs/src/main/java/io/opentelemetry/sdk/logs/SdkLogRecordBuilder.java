@@ -6,6 +6,7 @@
 package io.opentelemetry.sdk.logs;
 
 import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.Value;
 import io.opentelemetry.api.logs.LogRecordBuilder;
 import io.opentelemetry.api.logs.Severity;
@@ -13,6 +14,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
 import io.opentelemetry.sdk.common.internal.AttributesMap;
+import io.opentelemetry.sdk.common.internal.ContextScopeUtils;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -135,6 +137,27 @@ class SdkLogRecordBuilder implements LogRecordBuilder {
     return this;
   }
 
+  @SuppressWarnings("NullAway")
+  private void mergeContextAttributes(Context context) {
+    Attributes ctxAttributes = ContextScopeUtils.getContextScopedAttributes(context);
+    if (ctxAttributes.size() == 0) {
+      return;
+    }
+
+    // TODO: call SetAttribute() instead to re-use a few checks, including initialization.
+    if (this.attributes == null) {
+      this.attributes =
+          AttributesMap.create(
+              logLimits.getMaxNumberOfAttributes(), logLimits.getMaxAttributeValueLength());
+    }
+    ctxAttributes.forEach(
+        (key, value) -> {
+          if (!this.attributes.containsKey(key)) {
+            this.attributes.put(key, value);
+          }
+        });
+  }
+
   @Override
   public void emit() {
     if (loggerSharedState.hasBeenShutdown()) {
@@ -144,6 +167,7 @@ class SdkLogRecordBuilder implements LogRecordBuilder {
     if (!logger.isEnabled(severity, context)) {
       return;
     }
+    mergeContextAttributes(context);
     long observedTimestampEpochNanos =
         this.observedTimestampEpochNanos == 0
             ? this.loggerSharedState.getClock().now()
