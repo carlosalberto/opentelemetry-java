@@ -5,7 +5,10 @@
 
 package io.opentelemetry.sdk.trace.internal;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
@@ -38,4 +41,34 @@ public interface ExtendedSpanProcessor extends SpanProcessor {
    * @return {@code true} if this {@link SpanProcessor} requires onEnding events.
    */
   boolean isOnEndingRequired();
+
+  /**
+   * Called when a {@link io.opentelemetry.api.trace.Span} name changes.
+   *
+   * <p>This method is called synchronously on the execution thread, should not throw or block the
+   * execution thread.
+   *
+   * @param span the {@code Span} that has its name changed.
+   */
+  default void onUpdateName(ReadableSpan span) {}
+
+  /**
+   * Called when a {@link io.opentelemetry.api.trace.Span} gets a new Link.
+   *
+   * <p>This method is called synchronously on the execution thread, should not throw or block the
+   * execution thread.
+   *
+   * @param span the {@code Span} that has has a new Link added.
+   */
+  default void onAddLink(ReadableSpan span, SpanContext spanContext, Attributes attributes) {}
+
+  /**
+   * Called when an attribute is set on a {@link io.opentelemetry.api.trace.Span}.
+   *
+   * <p>This method is called synchronously on the execution thread, should not throw or block the
+   * execution thread.
+   *
+   * @param span the {@code Span} that has has an attribute set.
+   */
+  default void onSetAttribute(ReadableSpan span, AttributeKey<?> key, Object value) {}
 }

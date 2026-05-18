@@ -334,6 +334,7 @@ final class SdkSpan implements ReadWriteSpan {
     if (key == null || key.getKey().isEmpty() || value == null) {
       return this;
     }
+    boolean wasAttributeSet;
     synchronized (lock) {
       if (!isModifiableByCurrentThread()) {
         logger.log(Level.FINE, "Calling setAttribute() on an ended Span.");
@@ -346,6 +347,11 @@ final class SdkSpan implements ReadWriteSpan {
       }
 
       attributes.put(key, value);
+      wasAttributeSet = attributes.containsKey(key); // Either set or updated.
+    }
+    if (wasAttributeSet && spanProcessor instanceof ExtendedSpanProcessor) {
+      ExtendedSpanProcessor extendedSpanProcessor = (ExtendedSpanProcessor) spanProcessor;
+      extendedSpanProcessor.onSetAttribute(this, key, value);
     }
     return this;
   }
@@ -509,6 +515,10 @@ final class SdkSpan implements ReadWriteSpan {
       }
       this.name = name;
     }
+    if (spanProcessor instanceof ExtendedSpanProcessor) {
+      ExtendedSpanProcessor extendedSpanProcessor = (ExtendedSpanProcessor) spanProcessor;
+      extendedSpanProcessor.onUpdateName(this);
+    }
     return this;
   }
 
@@ -527,6 +537,7 @@ final class SdkSpan implements ReadWriteSpan {
                 attributes,
                 spanLimits.getMaxNumberOfAttributesPerLink(),
                 spanLimits.getMaxAttributeValueLength()));
+    boolean wasLinkAdded = false;
     synchronized (lock) {
       if (!isModifiableByCurrentThread()) {
         logger.log(Level.FINE, "Calling addLink() on an ended Span.");
@@ -537,8 +548,14 @@ final class SdkSpan implements ReadWriteSpan {
       }
       if (links.size() < spanLimits.getMaxNumberOfLinks()) {
         links.add(link);
+        wasLinkAdded = true;
       }
       totalRecordedLinks++;
+    }
+    if (wasLinkAdded && spanProcessor instanceof ExtendedSpanProcessor) {
+      // Expose the attributes after limits have been applied.
+      ExtendedSpanProcessor extendedSpanProcessor = (ExtendedSpanProcessor) spanProcessor;
+      extendedSpanProcessor.onAddLink(this, link.getSpanContext(), link.getAttributes());
     }
     return this;
   }
